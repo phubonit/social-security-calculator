@@ -3,1410 +3,864 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Công Cụ Tính Lương Hưu & Thuế Social Security Mỹ (Hỗ trợ dữ liệu SSA/IRS)</title>
+  <title>Mô Phỏng Lương Hưu Mỹ & Thuế Thu Nhập</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Google Fonts Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    input[type=range] {
-      accent-color: #2563eb;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 9999px;
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
 
   <!-- Header -->
-  <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
-      <div class="flex items-center space-x-3">
-        <div class="p-2.5 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl shadow-md flex items-center justify-center">
-          <i data-lucide="shield-dollar" class="w-6 h-6 text-white"></i>
+  <header class="bg-indigo-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3 text-center sm:text-left">
+        <div class="w-10 h-10 rounded-xl bg-indigo-700/80 flex items-center justify-center text-indigo-200 text-xl shadow-inner">
+          <i class="fa-solid fa-calculator"></i>
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2">
-            Social Security & Tax Calculator Pro
-            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">Mỹ 🇺🇸</span>
-          </h1>
-          <p class="text-xs text-slate-400">Nhập lịch sử thu nhập SSA/IRS • Top 35 năm • AIME & PIA • Thuế & Roth IRA</p>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight">Mô Phỏng Lương Hưu Mỹ & Thuế Thu Nhập</h1>
+          <p class="text-xs text-indigo-200">Social Security (SSA), IRS Combined Income & Tối ưu hóa Roth IRA</p>
         </div>
       </div>
-
-      <!-- Navigation Tabs -->
-      <nav class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 overflow-x-auto max-w-full">
-        <button id="tabBtn0" onclick="switchTab('tab-earnings')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-blue-600 text-white shadow-xs">
-          <i data-lucide="table-properties" class="w-3.5 h-3.5"></i>
-          <span>1. Lịch Sử Thu Nhập</span>
-        </button>
-        <button id="tabBtn1" onclick="switchTab('tab-pension')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 text-slate-300 hover:text-white">
-          <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5"></i>
-          <span>2. Tính Lương Hưu (PIA)</span>
-        </button>
-        <button id="tabBtn2" onclick="switchTab('tab-tax')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 text-slate-300 hover:text-white">
-          <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
-          <span>3. Thuế & Roth IRA</span>
-        </button>
-      </nav>
+      <div class="flex items-center gap-2">
+        <span class="bg-indigo-800/90 text-indigo-200 text-xs px-3 py-1.5 rounded-full border border-indigo-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved text-emerald-400"></i> Chuẩn Quy Tắc SSA & IRS
+        </span>
+      </div>
     </div>
   </header>
 
-  <!-- Notification Toast -->
-  <div id="toast" class="fixed top-16 right-5 z-50 transform transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl border border-slate-700 text-xs flex items-center gap-2">
-    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
-    <span id="toastMsg">Thao tác thành công</span>
-  </div>
+  <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+    
+    <!-- Tab Navigation -->
+    <div class="flex border-b border-slate-200 mb-6 space-x-2 sm:space-x-3 overflow-x-auto pb-1">
+      <button id="tab-btn-earnings" onclick="switchTab('earnings')" class="py-2.5 px-4 border-b-2 font-bold text-xs sm:text-sm border-indigo-600 text-indigo-600 flex items-center gap-2 whitespace-nowrap transition-colors">
+        <i class="fa-solid fa-list-check"></i> 1. Nhập Lịch Sử Thu Nhập (35 Năm)
+      </button>
+      <button id="tab-btn-benefits" onclick="switchTab('benefits')" class="py-2.5 px-4 border-b-2 font-bold text-xs sm:text-sm border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition-colors">
+        <i class="fa-solid fa-hand-holding-dollar"></i> 2. Tiền Hưu Nhận Hàng Tháng (62 - 70 Tuổi)
+      </button>
+      <button id="tab-btn-tax" onclick="switchTab('tax')" class="py-2.5 px-4 border-b-2 font-bold text-xs sm:text-sm border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition-colors">
+        <i class="fa-solid fa-file-invoice-dollar"></i> 3. Tính Thuế IRS & Roth IRA
+      </button>
+    </div>
 
-  <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full space-y-6">
-
-    <!-- Quick Overview Stats Bar -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-      <div class="px-3 border-r border-slate-100">
-        <span class="text-[11px] text-slate-500 font-medium block">Số năm đã ghi nhận</span>
-        <div class="flex items-baseline gap-1 mt-0.5">
-          <span id="statRecordedYears" class="text-lg font-black text-slate-900 font-mono">35</span>
-          <span class="text-[11px] text-slate-500">/ 35 năm chuẩn</span>
-        </div>
-      </div>
-      <div class="px-3 md:border-r border-slate-100">
-        <span class="text-[11px] text-slate-500 font-medium block">AIME (Thu nhập TB tháng)</span>
-        <div id="statQuickAime" class="text-lg font-black text-blue-600 font-mono mt-0.5">$6,250</div>
-      </div>
-      <div class="px-3 border-r border-slate-100">
-        <span class="text-[11px] text-slate-500 font-medium block">Lương hưu tuổi FRA (67t)</span>
-        <div id="statQuickPia" class="text-lg font-black text-indigo-600 font-mono mt-0.5">$2,680/th</div>
-      </div>
-      <div class="px-3">
-        <span class="text-[11px] text-slate-500 font-medium block">Ước tính thuế liên bang</span>
-        <div id="statQuickTax" class="text-lg font-black text-emerald-600 font-mono mt-0.5">0% (Miễn thuế)</div>
-      </div>
-    </section>
-
-    <!-- ==================== TAB 0: LỊCH SỬ THU NHẬP (EARNINGS HISTORY) ==================== -->
-    <section id="tab-earnings" class="space-y-6">
+    <!-- ==================== TAB 1: NHẬP LỊCH SỬ THU NHẬP ==================== -->
+    <section id="tab-earnings" class="block space-y-6">
       
-      <!-- Import and Setup Card -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <!-- Cấu hình nhập thu nhập -->
+      <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-slate-200/90">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
           <div>
             <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-blue-600"></i> Lịch Sử Thu Nhập Từng Năm (SSA / IRS)
+              <i class="fa-solid fa-receipt text-indigo-600"></i> Lịch Sử Đóng Thuế An Sinh Xã Hội
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Hệ thống chọn 35 năm cao nhất đã giới hạn theo trần đóng thuế FICA (Wage Base Cap) để tính AIME.</p>
+            <p class="text-xs text-slate-500 mt-0.5">SSA sẽ tự động chọn 35 năm có mức thu nhập cao nhất để tính lương hưu bình quân.</p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button onclick="fillSampleData('typical')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors flex items-center gap-1.5 shadow-xs">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Mẫu Đi Làm Điển Hình (35 năm)
-            </button>
-            <button onclick="fillSampleData('high')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors flex items-center gap-1.5 shadow-xs">
-              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Mẫu Thu Nhập Cao (Max Cap)
-            </button>
-            <button onclick="clearAllEarnings()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
-              Xóa hết
-            </button>
-          </div>
+          <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-lg border border-indigo-100 self-start sm:self-auto">
+            Quy tắc: 35 Năm Thu Nhập Cao Nhất
+          </span>
         </div>
 
-        <!-- Mode: Gross vs Net Income and Tax Rate estimation -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 bg-slate-50 p-4 rounded-xl border border-slate-200">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1.5">Loại thu nhập khi nhập vào bảng:</label>
-            <div class="grid grid-cols-2 gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
-              <button id="typeGrossBtn" onclick="setIncomeTaxType('gross')" class="py-1 px-2 rounded font-medium text-xs bg-blue-600 text-white shadow-xs">Trước Thuế (Gross)</button>
-              <button id="typeNetBtn" onclick="setIncomeTaxType('net')" class="py-1 px-2 rounded font-medium text-xs text-slate-600 hover:text-slate-900">Sau Thuế (Net)</button>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Định dạng số tiền bạn nhập:</label>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer bg-white p-2.5 rounded-lg border border-slate-200 flex-1 hover:border-indigo-300 transition">
+                <input type="radio" name="incomeType" value="gross" checked onchange="toggleIncomeMode()" class="text-indigo-600 focus:ring-indigo-500">
+                <span><strong>Gross:</strong> Lương trước thuế (W-2 Box 3 / SSA)</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer bg-white p-2.5 rounded-lg border border-slate-200 flex-1 hover:border-indigo-300 transition">
+                <input type="radio" name="incomeType" value="net" onchange="toggleIncomeMode()" class="text-indigo-600 focus:ring-indigo-500">
+                <span><strong>Net:</strong> Tiền thực nhận vào tài khoản</span>
+              </label>
             </div>
-            <p class="text-[11px] text-slate-400 mt-1">*Social Security luôn dùng thu nhập Gross đã đóng FICA.</p>
           </div>
 
-          <div id="netRateBox" class="opacity-50 pointer-events-none transition-all md:col-span-2 space-y-2">
-            <div class="p-2.5 bg-amber-50 border border-amber-200/80 rounded-lg text-amber-900 text-[11px] leading-relaxed flex items-start gap-2">
-              <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
-              <div>
-                <strong>Hướng dẫn:</strong> SSA chỉ tính lương hưu dựa trên thu nhập <strong>Gross (trước thuế)</strong>. Nếu bạn chỉ nhớ số tiền thực nhận (Net/Take-Home Pay), hãy chọn hoặc nhập tỷ lệ thuế ước tính dưới đây để hệ thống tự động quy đổi ngược lại.
-              </div>
+          <!-- Khu vực quy đổi Net sang Gross có chú thích & nút chọn nhanh -->
+          <div id="net-config-box" class="hidden space-y-2">
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-900">
+              <i class="fa-solid fa-circle-info mr-1 text-amber-600"></i> 
+              <strong>Hướng dẫn:</strong> SSA tính lương hưu trên số tiền <strong>Gross (trước thuế)</strong>. Chọn hoặc chỉnh tỷ lệ thuế bên dưới để hệ thống tự động quy đổi số tiền thực nhận của bạn về mức trước thuế:
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
-              <label class="font-semibold text-slate-700 whitespace-nowrap">Tỷ lệ thuế ước lượng quy đổi Net &rarr; Gross:</label>
-              <div class="flex items-center gap-1.5">
-                <input type="number" id="estEffectiveTaxRate" value="22" min="0" max="60" step="1" class="w-16 px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-bold text-center focus:ring-2 focus:ring-blue-500" oninput="updateTaxFormulaExample(); recalcNetConversion();">
-                <span class="font-bold text-slate-600">%</span>
-              </div>
-              <!-- Nút gợi ý nhanh -->
-              <div class="flex flex-wrap items-center gap-1.5">
-                <span class="text-slate-400 text-[11px]">Gợi ý:</span>
-                <button type="button" onclick="setQuickTaxPreset(15)" class="px-2 py-0.5 rounded-md bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 text-[10px] font-medium transition-colors">15% (Bang không thuế: FL, TX, WA)</button>
-                <button type="button" onclick="setQuickTaxPreset(22)" class="px-2 py-0.5 rounded-md bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 text-[10px] font-medium transition-colors">22% (W-2 Tiêu chuẩn)</button>
-                <button type="button" onclick="setQuickTaxPreset(28)" class="px-2 py-0.5 rounded-md bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 text-[10px] font-medium transition-colors">28% (Tự làm chủ / 1099)</button>
-                <button type="button" onclick="setQuickTaxPreset(30)" class="px-2 py-0.5 rounded-md bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 text-[10px] font-medium transition-colors">30% (Bang thuế cao: CA, NY)</button>
-              </div>
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-bold text-slate-700">Tỷ lệ thuế ước lượng:</label>
+              <input type="number" id="taxRateEstimate" value="22" min="0" max="60" oninput="updateTaxExample(); calculateAll();" 
+                class="w-16 px-2 py-1 border border-slate-300 rounded text-xs font-bold text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <span class="text-xs font-medium text-slate-600">% (Federal + State + FICA)</span>
             </div>
 
-            <p id="netFormulaDisplay" class="text-[11px] text-slate-500 italic font-mono bg-white p-1.5 rounded-md border border-slate-200">
-              Gross quy đổi = Net / (1 - 0.22). Ví dụ: Thực nhận $50,000 &rarr; Gross quy đổi: $64,103.
-            </p>
+            <!-- Gợi ý nhanh -->
+            <div class="flex flex-wrap gap-1.5 items-center">
+              <span class="text-[11px] text-slate-500">Gợi ý nhanh:</span>
+              <button type="button" onclick="setQuickTax(15)" class="px-2 py-0.5 text-[11px] bg-white border border-slate-300 rounded font-medium hover:bg-indigo-50 hover:text-indigo-600 transition">15% (Bang không thuế)</button>
+              <button type="button" onclick="setQuickTax(22)" class="px-2 py-0.5 text-[11px] bg-white border border-slate-300 rounded font-medium hover:bg-indigo-50 hover:text-indigo-600 transition">22% (W-2 Tiêu chuẩn)</button>
+              <button type="button" onclick="setQuickTax(28)" class="px-2 py-0.5 text-[11px] bg-white border border-slate-300 rounded font-medium hover:bg-indigo-50 hover:text-indigo-600 transition">28% (Làm tự do / 1099)</button>
+              <button type="button" onclick="setQuickTax(30)" class="px-2 py-0.5 text-[11px] bg-white border border-slate-300 rounded font-medium hover:bg-indigo-50 hover:text-indigo-600 transition">30% (Bang thuế cao: CA, NY)</button>
+            </div>
+
+            <p id="taxExampleText" class="text-[11px] text-slate-500 italic mt-1"></p>
           </div>
         </div>
 
-        <!-- Import Box (File Upload or Raw Text Paste) -->
-        <div class="border border-dashed border-slate-300 rounded-xl p-4 bg-slate-50/50 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <i data-lucide="upload-cloud" class="w-4 h-4 text-blue-600"></i> Dán Bảng Dữ Liệu Hoặc Tải File (CSV / JSON / Text copy từ ssa.gov)
-            </span>
-            <label class="cursor-pointer text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
-              <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Chọn file từ máy tính
-              <input type="file" id="fileInput" accept=".csv,.json,.txt" class="hidden" onchange="handleFileUpload(event)">
-            </label>
-          </div>
-
-          <div class="relative">
-            <textarea id="rawInputArea" rows="3" placeholder="Dán văn bản sao chép từ ssa.gov hoặc bảng CSV tại đây. Định dạng: Năm, Thu nhập (Ví dụ: 2024, 85000 hoặc 2023 75000...)" class="w-full text-xs font-mono p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-hidden"></textarea>
-          </div>
-
-          <div class="flex justify-between items-center">
-            <button onclick="loadSampleSSAText()" class="text-xs text-slate-500 hover:text-slate-800 underline">
-              Dán mẫu dữ liệu sao chép từ SSA
+        <!-- Các nút thao tác -->
+        <div class="mt-4 flex flex-wrap gap-2.5 items-center justify-between">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="generateSampleEarnings(35, 65000)" class="px-3 py-2 text-xs bg-indigo-50 text-indigo-700 font-bold rounded-lg hover:bg-indigo-100 border border-indigo-200 flex items-center gap-1.5">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Tạo Mẫu 35 Năm
             </button>
-            <button onclick="parseRawInput()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5">
-              <i data-lucide="check" class="w-3.5 h-3.5"></i> Phân tích & Cập Nhật Bảng
+            <button onclick="toggleImportArea()" class="px-3 py-2 text-xs bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 border border-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-file-import"></i> Dán Dữ Liệu Từ SSA / CSV
             </button>
+            <button onclick="clearAllEarnings()" class="px-3 py-2 text-xs bg-rose-50 text-rose-700 font-bold rounded-lg hover:bg-rose-100 border border-rose-200 flex items-center gap-1.5">
+              <i class="fa-regular fa-trash-can"></i> Xóa Dữ Liệu
+            </button>
+          </div>
+          <div class="text-xs font-medium text-slate-600">
+            Tổng cộng: <span id="count-years" class="font-bold text-indigo-600 font-mono">35</span> năm đã nhập (<span class="text-emerald-700 font-bold">Top 35 năm</span> được tô xanh)
           </div>
         </div>
 
+        <!-- Khung dán dữ liệu -->
+        <div id="import-area" class="hidden mt-4 pt-4 border-t border-slate-200 space-y-2">
+          <label class="block text-xs font-bold text-slate-700">Dán dữ liệu sao chép từ ssa.gov (hoặc dạng: Năm [khoảng cách] Thu nhập):</label>
+          <textarea id="pasteArea" rows="4" placeholder="Ví dụ:&#10;2026  $75,000&#10;2025  $72,000&#10;2024  $68,000" class="w-full text-xs p-3 font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          <div class="flex gap-2">
+            <button onclick="processPastedData()" class="px-3.5 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700">Xử Lý & Cập Nhật</button>
+            <button onclick="loadSampleSSAStatement()" class="px-3.5 py-1.5 bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-300">Nạp Dữ Liệu Mẫu SSA</button>
+          </div>
+        </div>
       </div>
 
-      <!-- Earnings History Visual Chart & Top 35 Table -->
+      <!-- Bảng thu nhập & Biểu đồ -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Table column -->
-        <div class="lg:col-span-5 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col space-y-3">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-            <div>
-              <h3 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <i data-lucide="list-ordered" class="w-3.5 h-3.5 text-blue-600"></i> Chi Tiết Từng Năm
-              </h3>
-              <p class="text-[11px] text-slate-400">Các dòng màu xanh là <strong class="text-blue-600">Top 35 năm</strong> được dùng tính AIME</p>
-            </div>
-            <button onclick="addNewYearRow()" class="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center gap-1">
-              <i data-lucide="plus" class="w-3 h-3"></i> Thêm năm
-            </button>
+        <!-- Cột Bảng Dữ Liệu -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-slate-200/90 lg:col-span-5 flex flex-col h-[560px]">
+          <div class="flex justify-between items-center pb-2.5 mb-2 border-b border-slate-100">
+            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800">Bảng Thu Nhập Từng Năm</h3>
+            <button onclick="addSingleYearRow()" class="text-xs text-indigo-600 font-bold hover:underline">+ Thêm 1 Năm</button>
           </div>
-
-          <div class="overflow-y-auto max-h-[460px] custom-scrollbar border border-slate-100 rounded-xl">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-100 sticky top-0 text-[11px] text-slate-600 font-semibold uppercase tracking-wider">
+          <div class="overflow-y-auto flex-1 pr-1">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="sticky top-0 bg-slate-100 text-slate-600 border-b border-slate-200">
                 <tr>
-                  <th class="py-2 px-2.5">Năm</th>
-                  <th class="py-2 px-2">Thu Nhập Nhập ($)</th>
-                  <th class="py-2 px-2">Sau Giới Hạn FICA ($)</th>
-                  <th class="py-2 px-1 text-center">Top 35</th>
+                  <th class="py-2 px-2">Năm</th>
+                  <th class="py-2 px-2">Bạn Nhập ($)</th>
+                  <th class="py-2 px-2">SSA Tính ($)</th>
                   <th class="py-2 px-1 text-center">Xóa</th>
                 </tr>
               </thead>
-              <tbody id="earningsTableBody" class="divide-y divide-slate-100 font-mono text-[11px]">
-                <!-- Dynamic Rows Generated Here -->
+              <tbody id="earningsTableBody" class="divide-y divide-slate-100">
+                <!-- Nội dung tạo tự động bằng JS -->
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Chart column -->
-        <div class="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 class="text-xs sm:text-sm font-bold text-slate-900">Biểu Đồ Lịch Sử Thu Nhập Qua Các Năm</h3>
-              <p class="text-xs text-slate-500">Cột màu xanh: Thu nhập được SSA chọn vào 35 năm cao nhất | Cột xám: Không nằm trong top 35</p>
+        <!-- Cột Biểu Đồ So Với Trần Wage Cap -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-slate-200/90 lg:col-span-7 flex flex-col justify-between">
+          <div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 mb-2 border-b border-slate-100 gap-2">
+              <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800">Biểu Đồ Thu Nhập So Với Trần Thuế (Wage Cap)</h3>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-emerald-500 rounded-sm"></span> Top 35 năm</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-slate-300 rounded-sm"></span> Năm khác</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-rose-500"></span> Trần Wage Cap</span>
+              </div>
             </div>
-            <div class="flex items-center gap-3 text-xs">
-              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-blue-600 inline-block"></span> Top 35 năm</span>
-              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-slate-300 inline-block"></span> Năm bị loại</span>
-              <span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-rose-500 inline-block"></span> Trần FICA</span>
+            <p class="text-[11px] text-slate-500 mb-3">Mỗi năm SSA đều có mức trần tối đa tính thuế An sinh xã hội (ví dụ năm 2026 là $175,900).</p>
+            <div class="relative h-[410px] w-full">
+              <canvas id="earningsHistoryChart"></canvas>
             </div>
           </div>
-
-          <div class="relative flex-1 min-h-[350px] w-full">
-            <canvas id="earningsHistoryChart"></canvas>
-          </div>
-
-          <div class="p-3 bg-blue-50/70 border border-blue-200/60 rounded-xl text-xs text-blue-900 flex items-start gap-2">
-            <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0 mt-0.5"></i>
-            <div>
-              <strong>Quy tắc trần đóng thuế FICA (Wage Base Cap):</strong> Mỗi năm chính phủ Mỹ quy định một mức trần thu nhập tối đa phải đóng thuế Social Security (Ví dụ năm 2024 là $168,600, năm 2025 là $176,100...). Mọi khoản lương cao hơn mức này đều không phải nộp thêm thuế và cũng không được tính thêm vào trợ cấp hưu trí.
-            </div>
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 mt-3 flex items-center justify-between">
+            <span class="font-medium">Đã chọn ra 35 năm cao nhất! Bạn có thể xem số tiền thực nhận.</span>
+            <button onclick="switchTab('benefits')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-700 transition">
+              Xem Tiền Hưu Nhận Hàng Tháng &rarr;
+            </button>
           </div>
         </div>
 
       </div>
-
     </section>
 
-    <!-- ==================== TAB 1: TÍNH TIỀN LƯƠNG HƯU (PIA & AIME) ==================== -->
-    <section id="tab-pension" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- ==================== TAB 2: TIỀN HƯU NHẬN HÀNG THÁNG (62 - 70 TUỔI) ==================== -->
+    <section id="tab-benefits" class="hidden space-y-6">
       
-      <!-- Input Controls Column -->
-      <div class="lg:col-span-5 space-y-5">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-5">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-              <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i> Tuổi Nhận Lương Hưu
-            </h2>
-            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-medium">FRA = 67 tuổi</span>
+      <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-slate-200/90">
+        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-money-bill-wave text-emerald-600"></i> Số Tiền Lương Hưu Thực Nhận Theo Từng Độ Tuổi (62 - 70 Tuổi)
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Số tiền bạn nhận được hàng tháng thay đổi rất lớn tùy thuộc vào độ tuổi bắt đầu làm đơn nhận tiền: Nhận sớm nhất ở tuổi 62 sẽ bị trừ 30%, đúng tuổi chuẩn 67 nhận 100%, hoặc chờ đến 70 tuổi nhận thêm 24%.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Cột điều khiển kéo tuổi & kết quả cơ sở -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90 lg:col-span-5 space-y-5">
+          
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100">
+              Kết Quả Tính Từ 35 Năm Thu Nhập
+            </h3>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+              <div>
+                <div class="text-[11px] text-slate-500">Tổng thu nhập 35 năm cao nhất:</div>
+                <div id="stat-total35" class="text-base font-bold text-slate-800 font-mono">$0</div>
+              </div>
+              <span class="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded text-slate-600 font-medium">35 năm</span>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+              <div>
+                <div class="text-[11px] text-slate-500">Lương bình quân tháng (AIME):</div>
+                <div id="stat-aime" class="text-base font-bold text-indigo-600 font-mono">$0 / tháng</div>
+              </div>
+              <span class="text-[10px] text-slate-400">Chia cho 420 tháng</span>
+            </div>
+
+            <div class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-1">
+              <div class="text-xs font-bold text-blue-900 uppercase">Mức Lương Hưu Chuẩn (Ở Tuổi 67):</div>
+              <div id="stat-pia" class="text-2xl font-black text-blue-700 font-mono">$0 / tháng</div>
+              <div id="stat-pia-yearly" class="text-xs font-semibold text-blue-600">Tương đương: $0 / năm</div>
+              <p class="text-[11px] text-blue-800/80 pt-1 border-t border-blue-200/60 mt-1">
+                Đây là mức chuẩn 100% được nhận khi đến đúng tuổi hưu chính thức (FRA).
+              </p>
+            </div>
           </div>
 
-          <!-- Summary from Tab 0 -->
-          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
-            <div class="flex justify-between">
-              <span class="text-slate-500">Số năm có thu nhập hợp lệ:</span>
-              <span id="summaryYearsCount" class="font-bold text-slate-800 font-mono">35 năm</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-500">Tổng thu nhập của 35 năm:</span>
-              <span id="summaryTotal35" class="font-bold text-blue-600 font-mono">$2,625,000</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-500">AIME (Thu nhập TB 420 tháng):</span>
-              <span id="summaryAimeVal" class="font-bold text-slate-900 font-mono">$6,250 / tháng</span>
-            </div>
-          </div>
-
-          <!-- Claiming Age Slider (62 to 70) -->
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <label for="claimAge" class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <i data-lucide="clock" class="w-4 h-4 text-indigo-600"></i> Chọn độ tuổi bạn muốn bắt đầu nhận:
+          <!-- Kéo tuổi nhận tiền -->
+          <div class="pt-2 border-t border-slate-100 space-y-3">
+            <div class="flex justify-between items-center">
+              <label for="claimAgeSlider" class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Chọn tuổi bắt đầu nhận tiền:
               </label>
-              <span id="displayClaimAge" class="text-base font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg">
-                67 tuổi (FRA)
+              <span id="selected-age-display" class="text-sm font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg">
+                67 tuổi
               </span>
             </div>
-            <input type="range" id="claimAge" min="62" max="70" step="1" value="67"
-              class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer"
-              oninput="onClaimAgeChange(this.value)">
-            
-            <div class="grid grid-cols-5 text-center text-[10px] font-semibold text-slate-500 mt-2">
-              <div class="text-left"><span class="text-rose-600 block font-bold">62 tuổi</span>-30%</div>
-              <div><span>65 tuổi</span>-13.3%</div>
-              <div class="text-center font-bold text-blue-700"><span class="block">67 tuổi</span>100% FRA</div>
-              <div><span>68 tuổi</span>+8%</div>
-              <div class="text-right"><span class="text-emerald-600 block font-bold">70 tuổi</span>+24%</div>
-            </div>
-          </div>
 
-          <div class="pt-2">
-            <button onclick="syncPensionToTax()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-2 shadow-xs">
-              <i data-lucide="arrow-right" class="w-4 h-4"></i> Đưa mức lương này sang Tab Tính Thuế (Tab 3)
+            <input type="range" id="claimAgeSlider" min="62" max="70" value="67" step="1" oninput="updateClaimAge(this.value)" 
+              class="w-full h-2.5 bg-slate-200 rounded-lg accent-indigo-600 cursor-pointer">
+
+            <div class="flex justify-between text-[11px] font-semibold text-slate-500 px-1">
+              <span class="text-rose-600">62 tuổi (Nhận sớm: -30%)</span>
+              <span class="text-blue-700 font-bold">67 tuổi (Chuẩn: 100%)</span>
+              <span class="text-emerald-700">70 tuổi (Nhận muộn: +24%)</span>
+            </div>
+
+            <!-- Hộp kết quả theo tuổi đang kéo -->
+            <div class="p-3.5 bg-indigo-50/80 rounded-xl border border-indigo-100 text-xs text-indigo-950 space-y-1">
+              <div>Độ tuổi bạn chọn: <strong id="selected-age-note" class="text-indigo-800 font-bold">67 tuổi</strong></div>
+              <div>Tỷ lệ tiền nhận: <strong id="selected-benefit-percent" class="text-indigo-800 font-bold">100%</strong></div>
+              <div>Số tiền thực nhận: <strong id="selected-benefit-val" class="text-base text-indigo-700 font-black font-mono">$0 / tháng</strong></div>
+            </div>
+
+            <button onclick="syncBenefitToTaxTab()" class="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 shadow-xs flex items-center justify-center gap-2 transition">
+              <i class="fa-solid fa-arrow-right"></i> Đưa Mức Lương Này Vào Tính Thuế
             </button>
           </div>
 
         </div>
 
-        <!-- Bend Point Breakdown Card -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 text-xs space-y-3">
-          <div class="font-bold text-slate-900 flex items-center justify-between">
-            <span class="flex items-center gap-1.5">
-              <i data-lucide="git-commit" class="w-4 h-4 text-blue-500"></i> Công Thức Lũy Thoái (SSA Bend Points)
-            </span>
-            <span class="text-[11px] text-slate-500 font-normal">Hệ số chuẩn SSA</span>
-          </div>
-          <div class="space-y-1.5 font-mono text-[11px]">
-            <div class="flex justify-between p-2 rounded bg-slate-50 border border-slate-100">
-              <span class="text-slate-600">Bậc 1 (90% của $0 - $1,174):</span>
-              <span id="bend1Amount" class="font-bold text-slate-900">$1,056.60</span>
+        <!-- Cột Biểu Đồ Cột So Sánh 62 - 70 Tuổi -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90 lg:col-span-7 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center pb-2.5 mb-2 border-b border-slate-100">
+              <h3 class="font-bold text-xs uppercase tracking-wider text-slate-800">So Sánh Tiền Lương Hưu Nhận Hàng Tháng (62 - 70 Tuổi)</h3>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-indigo-600 rounded-sm"></span> Tuổi đang chọn</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-slate-300 rounded-sm"></span> Tuổi khác</span>
+              </div>
             </div>
-            <div class="flex justify-between p-2 rounded bg-slate-50 border border-slate-100">
-              <span class="text-slate-600">Bậc 2 (32% của $1,174 - $7,078):</span>
-              <span id="bend2Amount" class="font-bold text-slate-900">$1,623.04</span>
-            </div>
-            <div class="flex justify-between p-2 rounded bg-slate-50 border border-slate-100">
-              <span class="text-slate-600">Bậc 3 (15% cho phần vượt $7,078):</span>
-              <span id="bend3Amount" class="font-bold text-slate-900">$0.00</span>
+            <p class="text-xs text-slate-500 mb-3">
+              Nếu bạn đủ tài chính để trì hoãn đến 70 tuổi, mỗi tháng số tiền hưu của bạn sẽ tăng thêm đáng kể so với việc nhận sớm từ tuổi 62.
+            </p>
+            <div class="relative h-[380px] w-full">
+              <canvas id="ageComparisonChart"></canvas>
             </div>
           </div>
-          <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/60 flex justify-between items-center">
-            <span class="text-xs font-semibold text-blue-900">PIA (Lương hưu cơ sở ở tuổi 67):</span>
-            <span id="piaResultVal" class="text-sm font-extrabold text-blue-700 font-mono">$2,680 / tháng</span>
+          <div class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 flex justify-between items-center">
+            <span>Tiếp theo: Xem số tiền hưu này có bị Sở Thuế IRS tính thuế hay không.</span>
+            <button onclick="switchTab('tax')" class="text-indigo-600 font-bold hover:underline">
+              Qua Tab 3: Tính Thuế & Roth IRA &rarr;
+            </button>
           </div>
         </div>
 
       </div>
-
-      <!-- Right Column: Results & Interactive Visual Chart -->
-      <div class="lg:col-span-7 space-y-5">
-        
-        <!-- Highlight Metric Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs">
-            <span class="text-xs text-slate-500 font-medium">AIME (Thu nhập TB)</span>
-            <div id="statAime" class="text-xl font-black text-slate-900 mt-1 font-mono">$6,250</div>
-            <span class="text-[11px] text-slate-500">Mỗi tháng trong 35 năm</span>
-          </div>
-
-          <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 text-white shadow-md">
-            <span class="text-xs text-blue-200 font-medium">Thực nhận hàng tháng</span>
-            <div id="statMonthlyPayout" class="text-2xl font-black mt-1 font-mono tracking-tight">$2,680</div>
-            <span id="statPayoutNote" class="text-[11px] text-blue-200">Ở mốc 67 tuổi (100% PIA)</span>
-          </div>
-
-          <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs">
-            <span class="text-xs text-slate-500 font-medium">Tổng nhận trong 1 năm</span>
-            <div id="statAnnualPayout" class="text-xl font-black text-emerald-600 mt-1 font-mono">$32,160</div>
-            <span class="text-[11px] text-slate-500">Chưa gồm trượt giá COLA</span>
-          </div>
-        </div>
-
-        <!-- Claiming Age Comparison Chart -->
-        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 class="font-bold text-slate-900 text-sm">Biểu Đồ Tiền Lương Theo Từng Độ Tuổi Nhận (62 – 70 tuổi)</h3>
-              <p class="text-xs text-slate-500">Cột màu xanh biển đậm là tuổi bạn đang chọn</p>
-            </div>
-            <div class="flex items-center gap-3 text-xs">
-              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-300 inline-block"></span> Mốc khác</span>
-              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-600 inline-block"></span> Tuổi chọn</span>
-            </div>
-          </div>
-
-          <div class="relative h-64 sm:h-72 w-full">
-            <canvas id="pensionAgeChart"></canvas>
-          </div>
-
-          <!-- Strategy Tip -->
-          <div id="strategyBox" class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
-            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold">Lời khuyên chiến lược:</span>
-              <span id="strategyText">Nhận lúc 67 tuổi đảm bảo bạn lấy đủ 100% số tiền bảo hiểm. Nếu bạn có sức khỏe tốt và có khoản tiết kiệm riêng chi tiêu được trong giai đoạn 62-69, việc trì hoãn đến năm 70 tuổi sẽ giúp số tiền hưu trọn đời tăng vĩnh viễn thêm 24%!</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
     </section>
 
-    <!-- ==================== TAB 2: TÍNH THUẾ THU NHẬP LƯƠNG HƯU (IRS & ROTH) ==================== -->
-    <section id="tab-tax" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- ==================== TAB 3: TÍNH THUẾ IRS & ROTH IRA ==================== -->
+    <section id="tab-tax" class="hidden space-y-6">
       
-      <!-- Tax Inputs Column -->
-      <div class="lg:col-span-5 space-y-5">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-              <i data-lucide="landmark" class="w-4 h-4 text-indigo-600"></i> Các Nguồn Thu Nhập Trong Năm
-            </h2>
-            <span class="text-xs bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full font-semibold border border-indigo-200">
-              Mẫu IRS 1040
-            </span>
-          </div>
+      <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-xs border border-slate-200/90">
+        <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-calculator text-indigo-600"></i> Tính Thuế Thu Nhập Trên Tiền Lương Hưu (IRS Combined Income)
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Tại Mỹ, tối thiểu <strong>15% tiền Social Security luôn được miễn thuế hoàn toàn</strong>. Tối đa chỉ có 85% có thể bị tính vào thu nhập chịu thuế tùy theo tổng thu nhập kết hợp của bạn.
+        </p>
+      </div>
 
-          <!-- Filing Status -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Cột nhập số liệu thuế -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90 lg:col-span-5 space-y-4">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100">
+            Dữ Liệu Khai Thuế Của Bạn
+          </h3>
+
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Tình Trạng Khai Thuế (Filing Status):</label>
-            <select id="filingStatus" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:bg-white" onchange="updateTaxCalculation()">
-              <option value="single">Độc Thân / Single ($25k - $34k)</option>
-              <option value="married_joint">Vợ Chồng Khai Chung / Married Filing Jointly ($32k - $44k)</option>
-              <option value="married_separate">Vợ Chồng Khai Riêng nhưng sống chung (Đánh thuế từ $0)</option>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tình trạng khai thuế:</label>
+            <select id="filingStatus" onchange="calculateTax()" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="single">Độc thân (Single) / Khai riêng ở riêng</option>
+              <option value="married_joint">Vợ chồng khai chung (Married Filing Jointly)</option>
+              <option value="married_separate">Vợ chồng sống chung nhưng khai riêng</option>
             </select>
           </div>
 
-          <!-- Social Security Annual Benefit -->
           <div>
-            <div class="flex justify-between items-center mb-1">
-              <label for="taxSSBenefit" class="text-xs font-semibold text-slate-700">Tổng tiền Social Security nhận cả năm:</label>
-              <span id="displayTaxSSVal" class="text-xs font-mono font-bold text-blue-600">$32,160</span>
-            </div>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">$</span>
-              <input type="number" id="taxSSBenefit" value="32160" step="500" class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-indigo-500" oninput="updateTaxCalculation()">
-            </div>
-            <span class="text-[11px] text-slate-400 mt-0.5 block">50% số tiền này (= <span id="halfSSDisplay" class="font-mono font-medium text-slate-700">$16,080</span>) được tính vào Combined Income.</span>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tổng lương Social Security nhận cả năm ($):</label>
+            <input type="number" id="tax-annual-ss" value="32160" oninput="calculateTax()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 font-mono">
+            <p class="text-[11px] text-slate-400 mt-0.5">Tự động đồng bộ từ Tab 2 khi bạn bấm nút chuyển.</p>
           </div>
 
-          <!-- Other Ordinary Income / AGI -->
           <div>
-            <div class="flex justify-between items-center mb-1">
-              <label for="otherIncome" class="text-xs font-semibold text-slate-700">
-                Thu nhập khác (Rút 401k/Trad IRA, đi làm thêm, cổ tức):
-              </label>
-              <span id="displayOtherIncome" class="text-xs font-mono font-bold text-slate-800">$20,000</span>
-            </div>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">$</span>
-              <input type="number" id="otherIncome" value="20000" step="1000" class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-indigo-500" oninput="updateTaxCalculation()">
-            </div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Thu nhập thường khác trong năm (AGI không gồm SS) ($):</label>
+            <input type="number" id="tax-other-income" value="25000" oninput="calculateTax()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 font-mono">
+            <p class="text-[11px] text-slate-400 mt-0.5">Tiền rút 401(k), Traditional IRA, lương làm thêm, tiền lãi cổ tức...</p>
           </div>
 
-          <!-- Tax-Exempt Interest -->
           <div>
-            <div class="flex justify-between items-center mb-1">
-              <label for="taxExemptInterest" class="text-xs font-semibold text-slate-700">Lãi trái phiếu miễn thuế (Municipal Bonds):</label>
-              <span class="text-[11px] text-slate-400">Tax-exempt Interest</span>
-            </div>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">$</span>
-              <input type="number" id="taxExemptInterest" value="0" step="500" class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-indigo-500" oninput="updateTaxCalculation()">
-            </div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Lãi trái phiếu miễn thuế liên bang ($):</label>
+            <input type="number" id="tax-exempt-interest" value="0" oninput="calculateTax()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 font-mono">
           </div>
 
-          <!-- Roth IRA Toggle Simulator -->
-          <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
+          <!-- Nút mô phỏng Roth IRA -->
+          <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 space-y-1.5">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i> Mô Phỏng Rút Bằng Roth IRA
+              <span class="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                <i class="fa-solid fa-piggy-bank text-indigo-600"></i> Mô phỏng rút từ Roth IRA
               </span>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="rothToggle" class="sr-only peer" onchange="toggleRothSimulation()">
-                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-              </label>
+              <input type="checkbox" id="rothToggle" onchange="calculateTax()" class="w-4 h-4 text-indigo-600 rounded cursor-pointer">
             </div>
-            <p class="text-[11px] text-emerald-900 leading-relaxed">
-              Bật tính năng này để giả định toàn bộ khoản tiền chi tiêu thêm <strong>được rút từ quỹ Roth IRA</strong> thay vì tài khoản 401(k)/IRA truyền thống.
+            <p class="text-[11px] text-indigo-800 leading-relaxed">
+              Bật công tắc này để xem: khi chuyển toàn bộ khoản thu nhập khác sang rút từ <strong>Roth IRA</strong>, thu nhập chịu thuế sẽ giảm và đưa tiền Social Security về diện <strong>hoàn toàn miễn thuế</strong>.
             </p>
           </div>
-
         </div>
 
-        <!-- Combined Income Formula Breakdown Card -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 text-xs space-y-2">
-          <h3 class="font-bold text-slate-900">Quy Tắc Ngưỡng IRS (Combined Income)</h3>
-          <p class="text-slate-600 leading-relaxed text-[11px]">
-            Công thức: <code class="bg-slate-100 px-1 py-0.5 rounded text-blue-700 font-bold">Combined Income = AGI + Lãi miễn thuế + 50% Social Security</code>
-          </p>
-          <div class="space-y-1.5 pt-2 text-[11px]">
-            <div class="flex items-center justify-between py-1 border-b border-slate-100">
-              <span class="text-slate-500">Mức miễn thuế (0%):</span>
-              <span id="tier0Label" class="font-medium text-slate-700">Dưới $25,000</span>
-            </div>
-            <div class="flex items-center justify-between py-1 border-b border-slate-100">
-              <span class="text-slate-500">Bậc 1 (Tối đa 50% chịu thuế):</span>
-              <span id="tier1Label" class="font-medium text-amber-600">$25,000 – $34,000</span>
-            </div>
-            <div class="flex items-center justify-between py-1">
-              <span class="text-slate-500">Bậc 2 (Tối đa 85% chịu thuế):</span>
-              <span id="tier2Label" class="font-medium text-rose-600">Trên $34,000</span>
-            </div>
-          </div>
-        </div>
+        <!-- Cột Kết quả thuế & Biểu đồ Donut -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/90 lg:col-span-7 space-y-5">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider pb-2 border-b border-slate-100">
+            Kết Quả Phân Tích Thuế
+          </h3>
 
-      </div>
-
-      <!-- Tax Results & Charts Column -->
-      <div class="lg:col-span-7 space-y-5">
-        
-        <!-- Status Indicator -->
-        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-            <div>
-              <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Thu Nhập Kết Hợp (Combined Income)</span>
-              <div id="statCombinedIncome" class="text-2xl sm:text-3xl font-black text-slate-900 font-mono mt-0.5">$36,080</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <div class="text-[11px] text-slate-500">IRS Combined Income:</div>
+              <div id="stat-combined-income" class="text-base font-bold text-slate-800 mt-0.5 font-mono">$0</div>
+              <div id="stat-combined-bracket" class="text-[10px] text-indigo-600 font-semibold mt-1">Khung: 0%</div>
             </div>
-            <div class="text-left sm:text-right">
-              <span id="taxStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Chịu thuế bậc tối đa (Lên đến 85%)
-              </span>
+
+            <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl">
+              <div class="text-[11px] text-rose-800 font-bold">Phần Bị Tính Thuế:</div>
+              <div id="stat-taxable-ss" class="text-base font-black text-rose-700 mt-0.5 font-mono">$0</div>
+              <div id="stat-taxable-percent" class="text-[10px] text-rose-600 mt-1">(0% tiền hưu)</div>
+            </div>
+
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <div class="text-[11px] text-emerald-800 font-bold">Phần Được Miễn Thuế:</div>
+              <div id="stat-nontaxable-ss" class="text-base font-black text-emerald-700 mt-0.5 font-mono">$0</div>
+              <div class="text-[10px] text-emerald-600 mt-1">(Ít nhất 15% luôn miễn)</div>
             </div>
           </div>
 
-          <!-- Progress Bar -->
-          <div>
-            <div class="flex justify-between text-xs font-semibold mb-1.5">
-              <span>Mức Combined Income so với mốc IRS:</span>
-              <span id="statBarPercent" class="font-mono text-slate-600">Vượt mốc cao nhất</span>
-            </div>
-            <div class="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden flex relative">
-              <div id="progFree" class="bg-emerald-500 h-full transition-all duration-300" style="width: 50%" title="Vùng miễn thuế"></div>
-              <div id="prog50" class="bg-amber-500 h-full transition-all duration-300" style="width: 25%" title="Vùng chịu thuế 50%"></div>
-              <div id="prog85" class="bg-rose-500 h-full transition-all duration-300" style="width: 25%" title="Vùng chịu thuế 85%"></div>
-            </div>
-            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-              <span>$0</span>
-              <span id="marker1">$25,000 (Ngưỡng 1)</span>
-              <span id="marker2">$34,000 (Ngưỡng 2)</span>
-              <span>$60,000+</span>
-            </div>
-          </div>
-
-          <!-- Breakdown Numbers -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <div class="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
-              <span class="text-[11px] font-semibold text-emerald-800 block">Số tiền SS Miễn Thuế:</span>
-              <span id="statTaxFreeAmt" class="text-lg font-black text-emerald-700 font-mono">$17,922</span>
-              <span id="statTaxFreePercent" class="text-[10px] text-emerald-600 block">(55.7% tiền hưu)</span>
-            </div>
-            <div class="bg-rose-50/60 p-3 rounded-xl border border-rose-100">
-              <span class="text-[11px] font-semibold text-rose-800 block">Số tiền SS Bị Đánh Thuế:</span>
-              <span id="statTaxableAmt" class="text-lg font-black text-rose-700 font-mono">$14,238</span>
-              <span id="statTaxablePercent" class="text-[10px] text-rose-600 block">(44.3% tiền hưu)</span>
-            </div>
-            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <span class="text-[11px] font-semibold text-slate-700 block">Ước tính thuế liên bang:</span>
-              <span id="statEstFedTax" class="text-lg font-black text-slate-900 font-mono">~$1,709</span>
-              <span class="text-[10px] text-slate-500 block">Ước tính theo thuế suất ~12%</span>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Visual Tax Charts (Side by Side) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Donut: Taxable vs Non-Taxable SS -->
-          <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col items-center">
-            <h4 class="text-xs font-bold text-slate-800 self-start mb-2 flex items-center gap-1.5">
-              <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-blue-600"></i> Cơ Cấu Thuế Tiền Hưu
-            </h4>
-            <div class="relative w-44 h-44 my-auto">
+          <!-- Biểu đồ tròn & Ghi chú -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-2">
+            <div class="relative h-56 w-full flex items-center justify-center">
               <canvas id="taxDonutChart"></canvas>
             </div>
-            <div class="flex justify-center gap-4 text-[11px] mt-2">
-              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Miễn thuế</span>
-              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Chịu thuế</span>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs text-slate-600">
+              <div class="font-bold text-slate-800 text-xs uppercase tracking-wide">3 Lưu ý cốt lõi:</div>
+              <ul class="list-disc pl-4 space-y-1.5 text-[11px]">
+                <li><strong>Combined Income</strong> = Thu nhập khác + Lãi miễn thuế + 50% tiền Social Security.</li>
+                <li><strong>Không phải mất 50% hay 85% tiền túi:</strong> Chỉ là tỷ lệ đó của tiền hưu bị cộng vào bảng khai thuế chung của bạn.</li>
+                <li><strong>Lợi ích Roth IRA:</strong> Tiền rút từ Roth IRA không bị tính vào AGI, giúp giảm đáng kể thuế hưu trí.</li>
+              </ul>
             </div>
-          </div>
-
-          <!-- Stacked Bar: Combined Income Composition -->
-          <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col">
-            <h4 class="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
-              <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-600"></i> Thành Phần Combined Income
-            </h4>
-            <div class="relative flex-1 min-h-[160px] w-full">
-              <canvas id="incomeCompositionChart"></canvas>
-            </div>
-            <div class="text-[10px] text-slate-500 text-center mt-1">
-              Thu nhập khác + Lãi miễn thuế + 50% tiền lương Social Security
-            </div>
-          </div>
-        </div>
-
-        <!-- Roth Strategy Explanation -->
-        <div id="rothAlertBox" class="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 flex gap-3 shadow-xs">
-          <div class="p-2 bg-emerald-100 rounded-xl text-emerald-700 shrink-0 self-start">
-            <i data-lucide="shield-check" class="w-5 h-5"></i>
-          </div>
-          <div class="space-y-1">
-            <h4 class="font-bold text-emerald-900 text-sm">Bí Quyết Thuế Hưu Trí: Lợi Thế Của Roth IRA</h4>
-            <p class="text-emerald-800 leading-relaxed text-xs">
-              Tiền rút hợp lệ từ quỹ <strong>Roth IRA hoàn toàn không tính vào AGI và Combined Income</strong>. Do đó, bạn có thể rút bao nhiêu tiền chi tiêu tùy ý từ Roth IRA mà vẫn giữ tiền lương hưu Social Security ở mức <strong>0% thuế</strong>!
-            </p>
           </div>
         </div>
 
       </div>
-
     </section>
 
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-slate-900 border-t border-slate-800 text-slate-400 text-xs py-5 mt-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3">
-      <div class="flex items-center space-x-2">
-        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
-        <span>Công cụ tính toán & mô phỏng theo biểu phí IRS & Social Security Administration (SSA).</span>
-      </div>
-      <div class="text-slate-500">
-        Dữ liệu được lưu trữ an toàn ngay trên trình duyệt của bạn (LocalStorage)
-      </div>
-    </div>
-  </footer>
-
-  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // Historical Social Security Wage Base Cap
+    // Bảng trần FICA Wage Base Cap theo từng năm
     const WAGE_CAPS = {
-      1985: 39600, 1986: 42000, 1987: 43800, 1988: 45000, 1989: 48000,
-      1990: 51300, 1991: 53400, 1992: 55500, 1993: 57600, 1994: 60600,
-      1995: 61200, 1996: 62700, 1997: 65400, 1998: 68400, 1999: 72600,
-      2000: 76200, 2001: 80400, 2002: 84900, 2003: 87000, 2004: 87900,
-      2005: 90000, 2006: 94200, 2007: 97500, 2008: 102000, 2009: 106800,
-      2010: 106800, 2011: 106800, 2012: 110100, 2013: 113700, 2014: 117000,
-      2015: 118500, 2016: 118500, 2017: 127200, 2018: 128400, 2019: 132900,
-      2020: 137700, 2021: 142800, 2022: 147000, 2023: 160200, 2024: 168600,
-      2025: 176100, 2026: 181800
+      2026: 175900, 2025: 176100, 2024: 168600, 2023: 160200, 2022: 147000,
+      2021: 142800, 2020: 137700, 2019: 132900, 2018: 128400, 2017: 127200,
+      2016: 118500, 2015: 118500, 2014: 117000, 2013: 113700, 2012: 110100,
+      2011: 106800, 2010: 106800, 2009: 106800, 2008: 102000, 2007: 97500,
+      2006: 94200, 2005: 90000, 2004: 87900, 2003: 87000, 2002: 84900,
+      2001: 80400, 2000: 76200, 1999: 72600, 1998: 68400, 1997: 65400,
+      1996: 62700, 1995: 61200, 1994: 60600, 1993: 57600, 1992: 55500,
+      1991: 53400, 1990: 51300
     };
 
-    const DEFAULT_CAP = 176100;
-    const BEND_POINT_1 = 1174;
-    const BEND_POINT_2 = 7078;
-
-    const AGE_FACTORS = {
-      62: 0.700, 63: 0.750, 64: 0.800, 65: 0.8667,
-      66: 0.9333, 67: 1.000, 68: 1.080, 69: 1.160, 70: 1.240
-    };
-
-    // State Variables
-    let incomeTaxType = 'gross'; // 'gross' or 'net'
-    let earningsHistory = []; // Array of { year, rawVal, cappedVal, isTop35 }
-    let pensionChartInstance = null;
+    let earningsData = [];
     let earningsChartInstance = null;
+    let ageChartInstance = null;
     let taxDonutChartInstance = null;
-    let incomeCompChartInstance = null;
-    let isRothActive = false;
-    let selectedClaimAge = 67;
 
-    // Toast helper
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      const toastMsg = document.getElementById('toastMsg');
-      toastMsg.innerText = msg;
-      toast.classList.remove('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
-      setTimeout(() => {
-        toast.classList.add('translate-y-[-20px]', 'opacity-0', 'pointer-events-none');
-      }, 2500);
-    }
-
-    // Tab Switcher
-    function switchTab(tabId) {
-      ['tab-earnings', 'tab-pension', 'tab-tax'].forEach((id, idx) => {
-        const el = document.getElementById(id);
-        const btn = document.getElementById(`tabBtn${idx}`);
-        if (id === tabId) {
-          el.classList.remove('hidden');
-          btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 bg-blue-600 text-white shadow-xs";
-        } else {
-          el.classList.add('hidden');
-          btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 text-slate-300 hover:text-white";
-        }
-      });
-
-      if (tabId === 'tab-earnings') {
-        renderEarningsHistoryChart();
-      } else if (tabId === 'tab-pension') {
-        renderPensionAgeChart();
-      } else if (tabId === 'tab-tax') {
-        updateTaxCalculation();
-      }
-      lucide.createIcons();
-    }
-
-    // Toggle Gross vs Net Mode
-    function setIncomeTaxType(type) {
-      incomeTaxType = type;
-      const grossBtn = document.getElementById('typeGrossBtn');
-      const netBtn = document.getElementById('typeNetBtn');
-      const netRateBox = document.getElementById('netRateBox');
-
-      if (type === 'gross') {
-        grossBtn.className = "py-1 px-2 rounded font-medium text-xs bg-blue-600 text-white shadow-xs";
-        netBtn.className = "py-1 px-2 rounded font-medium text-xs text-slate-600 hover:text-slate-900";
-        netRateBox.classList.add('opacity-50', 'pointer-events-none');
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedData();
+      if (earningsData.length === 0) {
+        generateSampleEarnings(35, 65000);
       } else {
-        netBtn.className = "py-1 px-2 rounded font-medium text-xs bg-blue-600 text-white shadow-xs";
-        grossBtn.className = "py-1 px-2 rounded font-medium text-xs text-slate-600 hover:text-slate-900";
-        netRateBox.classList.remove('opacity-50', 'pointer-events-none');
-        updateTaxFormulaExample();
+        calculateAll();
       }
-      recalcEarningsData();
-      showToast(`Đã chuyển chế độ thu nhập sang: ${type === 'gross' ? 'Trước Thuế (Gross)' : 'Sau Thuế (Net)'}`);
+      initCharts();
+      calculateTax();
+    });
+
+    // Chuyển Tab
+    function switchTab(tab) {
+      document.getElementById('tab-earnings').classList.add('hidden');
+      document.getElementById('tab-benefits').classList.add('hidden');
+      document.getElementById('tab-tax').classList.add('hidden');
+
+      ['earnings', 'benefits', 'tax'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        btn.className = 'py-2.5 px-4 border-b-2 font-bold text-xs sm:text-sm border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition-colors';
+      });
+
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).className = 'py-2.5 px-4 border-b-2 font-bold text-xs sm:text-sm border-indigo-600 text-indigo-600 flex items-center gap-2 whitespace-nowrap transition-colors';
+
+      if (tab === 'earnings' && earningsChartInstance) earningsChartInstance.resize();
+      if (tab === 'benefits' && ageChartInstance) ageChartInstance.resize();
+      if (tab === 'tax' && taxDonutChartInstance) taxDonutChartInstance.resize();
     }
 
-    function setQuickTaxPreset(rate) {
-      document.getElementById('estEffectiveTaxRate').value = rate;
-      updateTaxFormulaExample();
-      recalcNetConversion();
-      showToast(`Đã áp dụng mức thuế ước tính ${rate}%`);
+    // Chuyển chế độ Gross / Net
+    function toggleIncomeMode() {
+      const mode = document.querySelector('input[name="incomeType"]:checked').value;
+      const box = document.getElementById('net-config-box');
+      if (mode === 'net') {
+        box.classList.remove('hidden');
+        updateTaxExample();
+      } else {
+        box.classList.add('hidden');
+      }
+      calculateAll();
     }
 
-    function updateTaxFormulaExample() {
-      const rate = parseFloat(document.getElementById('estEffectiveTaxRate').value) || 22;
+    function setQuickTax(rate) {
+      document.getElementById('taxRateEstimate').value = rate;
+      updateTaxExample();
+      calculateAll();
+    }
+
+    function updateTaxExample() {
+      const rate = parseFloat(document.getElementById('taxRateEstimate').value) || 22;
       const factor = 1 - (rate / 100);
-      const safeFactor = factor > 0.05 ? factor : 0.05;
       const sampleNet = 50000;
-      const sampleGross = Math.round(sampleNet / safeFactor);
-      const displayEl = document.getElementById('netFormulaDisplay');
-      if (displayEl) {
-        displayEl.innerText = `Gross quy đổi = Net / (1 - ${ (rate/100).toFixed(2) }). Ví dụ: Thực nhận $${sampleNet.toLocaleString()} → Gross quy đổi: $${sampleGross.toLocaleString()}.`;
+      const convertedGross = Math.round(sampleNet / (factor > 0.1 ? factor : 0.1));
+      document.getElementById('taxExampleText').innerText = 
+        `Ví dụ: Nếu nhận vào tài khoản $${sampleNet.toLocaleString()}/năm với mức thuế ${rate}%, hệ thống sẽ quy ra lương Gross là $${convertedGross.toLocaleString()}.`;
+    }
+
+    function toggleImportArea() {
+      document.getElementById('import-area').classList.toggle('hidden');
+    }
+
+    function generateSampleEarnings(years = 35, baseIncome = 65000) {
+      earningsData = [];
+      const currentYear = 2026;
+      for (let i = 0; i < years; i++) {
+        const year = currentYear - i;
+        const variation = Math.round(baseIncome * (1 - (i * 0.016)) + (Math.sin(i) * 3500));
+        earningsData.push({
+          year: year,
+          inputIncome: Math.max(variation, 15000)
+        });
+      }
+      calculateAll();
+    }
+
+    function clearAllEarnings() {
+      if (confirm('Bạn có chắc muốn xóa toàn bộ danh sách thu nhập không?')) {
+        earningsData = [];
+        calculateAll();
       }
     }
 
-    function recalcNetConversion() {
-      if (incomeTaxType === 'net') {
-        recalcEarningsData();
+    function addSingleYearRow() {
+      const minYear = earningsData.length > 0 ? Math.min(...earningsData.map(d => d.year)) - 1 : 2026;
+      earningsData.push({ year: minYear, inputIncome: 50000 });
+      calculateAll();
+    }
+
+    function removeYear(year) {
+      earningsData = earningsData.filter(d => d.year !== year);
+      calculateAll();
+    }
+
+    function updateYearIncome(year, val) {
+      const item = earningsData.find(d => d.year === year);
+      if (item) {
+        item.inputIncome = parseFloat(val) || 0;
+        calculateAll();
       }
     }
 
-    // Recalculate caps, top 35 and update DOM
-    function recalcEarningsData() {
-      const taxRate = (parseFloat(document.getElementById('estEffectiveTaxRate').value) || 22) / 100;
+    function processPastedData() {
+      const text = document.getElementById('pasteArea').value;
+      if (!text.trim()) return;
 
-      // 1. Convert to Gross if in Net mode, and apply Annual Wage Cap
-      earningsHistory.forEach(item => {
-        let grossEquivalent = item.rawVal;
-        if (incomeTaxType === 'net') {
-          grossEquivalent = item.rawVal / (1 - taxRate);
+      const lines = text.split('\n');
+      const parsed = [];
+
+      lines.forEach(line => {
+        const clean = line.replace(/[\$,]/g, '').trim();
+        const parts = clean.split(/[\t\s,]+/);
+        if (parts.length >= 2) {
+          const yr = parseInt(parts[0]);
+          const inc = parseFloat(parts[1]);
+          if (!isNaN(yr) && !isNaN(inc) && yr > 1950 && yr < 2050) {
+            parsed.push({ year: yr, inputIncome: inc });
+          }
         }
-        const cap = WAGE_CAPS[item.year] || DEFAULT_CAP;
-        item.cappedVal = Math.min(grossEquivalent, cap);
-        item.isTop35 = false;
       });
 
-      // 2. Identify top 35 years
-      const sorted = [...earningsHistory].sort((a, b) => b.cappedVal - a.cappedVal);
-      const top35 = sorted.slice(0, 35);
-      top35.forEach(t => {
-        const found = earningsHistory.find(e => e.year === t.year);
-        if (found && found.cappedVal > 0) found.isTop35 = true;
-      });
-
-      // 3. Render Table
-      renderEarningsTable();
-
-      // 4. Update Overview & Tab 1 Calculations
-      updatePensionMetricsFromEarnings();
-
-      // 5. Update Chart
-      renderEarningsHistoryChart();
-
-      // Save to localStorage
-      try {
-        localStorage.setItem('ss_calc_earnings', JSON.stringify(earningsHistory));
-      } catch (e) {}
+      if (parsed.length > 0) {
+        earningsData = parsed.sort((a,b) => b.year - a.year);
+        calculateAll();
+        document.getElementById('import-area').classList.add('hidden');
+      } else {
+        alert('Không nhận diện được định dạng hợp lệ.');
+      }
     }
 
-    function renderEarningsTable() {
+    function loadSampleSSAStatement() {
+      let sample = "";
+      for (let y = 2026; y >= 1992; y--) {
+        const val = Math.round(38000 + (y - 1992) * 2900);
+        sample += `${y}\t$${val.toLocaleString()}\n`;
+      }
+      document.getElementById('pasteArea').value = sample;
+    }
+
+    // Tính toán AIME, PIA chuẩn SSA
+    function calculateAll() {
+      const mode = document.querySelector('input[name="incomeType"]:checked').value;
+      const taxRate = (parseFloat(document.getElementById('taxRateEstimate').value) || 22) / 100;
+
+      earningsData.forEach(item => {
+        let gross = item.inputIncome;
+        if (mode === 'net') {
+          gross = item.inputIncome / (1 - taxRate);
+        }
+        const cap = WAGE_CAPS[item.year] || 175900;
+        item.gross = gross;
+        item.taxableSS = Math.min(gross, cap);
+      });
+
+      const sortedByIncome = [...earningsData].sort((a,b) => b.taxableSS - a.taxableSS);
+      const top35Years = new Set(sortedByIncome.slice(0, 35).map(d => d.year));
+
+      let total35 = 0;
+      sortedByIncome.slice(0, 35).forEach(d => total35 += d.taxableSS);
+
+      // AIME = tổng 35 năm / 420 tháng
+      const aime = Math.round(total35 / 420);
+
+      // Công thức mốc chuẩn SSA
+      let pia = 0;
+      if (aime <= 1226) {
+        pia = aime * 0.90;
+      } else if (aime <= 7391) {
+        pia = (1226 * 0.90) + ((aime - 1226) * 0.32);
+      } else {
+        pia = (1226 * 0.90) + ((7391 - 1226) * 0.32) + ((aime - 7391) * 0.15);
+      }
+      pia = Math.round(pia);
+
+      // Cập nhật DOM
+      document.getElementById('count-years').innerText = earningsData.length;
+      document.getElementById('stat-total35').innerText = '$' + Math.round(total35).toLocaleString();
+      document.getElementById('stat-aime').innerText = '$' + aime.toLocaleString() + ' / tháng';
+      document.getElementById('stat-pia').innerText = '$' + pia.toLocaleString() + ' / tháng';
+      document.getElementById('stat-pia-yearly').innerText = 'Tương đương: $' + (pia * 12).toLocaleString() + ' / năm';
+
+      renderEarningsTable(top35Years);
+      updateEarningsChart(top35Years);
+      updateAgeChart(pia);
+      updateClaimAge(document.getElementById('claimAgeSlider').value);
+      saveData();
+    }
+
+    function renderEarningsTable(top35Years) {
       const tbody = document.getElementById('earningsTableBody');
       tbody.innerHTML = '';
+      const sortedChronological = [...earningsData].sort((a,b) => b.year - a.year);
 
-      // Sort by year descending for user-friendly table view
-      const displayList = [...earningsHistory].sort((a, b) => b.year - a.year);
-
-      displayList.forEach(item => {
+      sortedChronological.forEach(d => {
+        const isTop = top35Years.has(d.year);
         const tr = document.createElement('tr');
-        tr.className = item.isTop35 ? "bg-blue-50/50 font-semibold" : "hover:bg-slate-50";
+        tr.className = isTop ? 'bg-emerald-50/70 hover:bg-emerald-100/70 font-medium' : 'hover:bg-slate-50';
 
         tr.innerHTML = `
-          <td class="py-2 px-2.5 text-slate-800">${item.year}</td>
-          <td class="py-2 px-2">
-            <input type="number" value="${Math.round(item.rawVal)}" step="1000" class="w-24 px-1.5 py-1 bg-white border border-slate-200 rounded text-xs focus:ring-1 focus:ring-blue-500 font-mono" onchange="updateSingleYearVal(${item.year}, this.value)">
+          <td class="py-1.5 px-2 font-mono text-slate-700">${d.year}</td>
+          <td class="py-1 px-2">
+            <input type="number" value="${Math.round(d.inputIncome)}" onchange="updateYearIncome(${d.year}, this.value)" 
+              class="w-24 px-1.5 py-1 border border-slate-300 rounded bg-white text-xs font-mono">
           </td>
-          <td class="py-2 px-2 text-slate-700 font-medium">$${Math.round(item.cappedVal).toLocaleString()}</td>
-          <td class="py-2 px-1 text-center">
-            ${item.isTop35 
-              ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">Top 35</span>' 
-              : '<span class="text-slate-400">-</span>'}
+          <td class="py-1.5 px-2 font-mono ${isTop ? 'text-emerald-700 font-bold' : 'text-slate-500'}">
+            $${Math.round(d.taxableSS).toLocaleString()}
           </td>
-          <td class="py-2 px-1 text-center">
-            <button onclick="removeYearRow(${item.year})" class="text-slate-400 hover:text-rose-600 transition-colors p-1">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i>
-            </button>
+          <td class="py-1.5 px-1 text-center">
+            <button onclick="removeYear(${d.year})" class="text-slate-400 hover:text-rose-600 transition"><i class="fa-regular fa-trash-can"></i></button>
           </td>
         `;
         tbody.appendChild(tr);
       });
-
-      lucide.createIcons();
     }
 
-    function updateSingleYearVal(year, newVal) {
-      const target = earningsHistory.find(e => e.year === year);
-      if (target) {
-        target.rawVal = parseFloat(newVal) || 0;
-        recalcEarningsData();
-      }
-    }
+    function updateClaimAge(age) {
+      age = parseInt(age);
+      document.getElementById('selected-age-display').innerText = `${age} tuổi`;
+      document.getElementById('selected-age-note').innerText = `${age} tuổi`;
 
-    function addNewYearRow() {
-      let nextYear = 2026;
-      if (earningsHistory.length > 0) {
-        const minYear = Math.min(...earningsHistory.map(e => e.year));
-        nextYear = minYear - 1;
-      }
-      earningsHistory.push({
-        year: nextYear,
-        rawVal: 60000,
-        cappedVal: 60000,
-        isTop35: false
-      });
-      recalcEarningsData();
-      showToast(`Đã thêm năm ${nextYear}`);
-    }
-
-    function removeYearRow(year) {
-      earningsHistory = earningsHistory.filter(e => e.year !== year);
-      recalcEarningsData();
-    }
-
-    function clearAllEarnings() {
-      earningsHistory = [];
-      recalcEarningsData();
-      showToast('Đã xóa danh sách thu nhập');
-    }
-
-    // Chart.js: Earnings History
-    function renderEarningsHistoryChart() {
-      const ctx = document.getElementById('earningsHistoryChart');
-      if (!ctx) return;
-
-      const sortedByYear = [...earningsHistory].sort((a, b) => a.year - b.year);
-      const labels = sortedByYear.map(e => e.year);
-      const dataVals = sortedByYear.map(e => Math.round(e.cappedVal));
-      const capLines = sortedByYear.map(e => WAGE_CAPS[e.year] || DEFAULT_CAP);
-      const bgColors = sortedByYear.map(e => e.isTop35 ? '#2563eb' : '#cbd5e1');
-
-      if (earningsChartInstance) {
-        earningsChartInstance.data.labels = labels;
-        earningsChartInstance.data.datasets[0].data = dataVals;
-        earningsChartInstance.data.datasets[0].backgroundColor = bgColors;
-        earningsChartInstance.data.datasets[1].data = capLines;
-        earningsChartInstance.update();
-        return;
-      }
-
-      earningsChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Thu nhập tính trợ cấp ($)',
-              data: dataVals,
-              backgroundColor: bgColors,
-              borderRadius: 4
-            },
-            {
-              type: 'line',
-              label: 'Trần FICA của năm',
-              data: capLines,
-              borderColor: '#f43f5e',
-              borderWidth: 1.5,
-              borderDash: [4, 4],
-              pointRadius: 0,
-              fill: false
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(ctx) {
-                  return ` ${ctx.dataset.label}: $${ctx.raw.toLocaleString()}`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { callback: v => '$' + (v/1000) + 'k', font: { size: 10 } },
-              grid: { color: '#f1f5f9' }
-            },
-            x: {
-              grid: { display: false },
-              ticks: { font: { size: 10 }, maxRotation: 45 }
-            }
-          }
-        }
-      });
-    }
-
-    // Calculate PIA using SSA Bend Points
-    function calculatePIA(aime) {
-      let portion1 = 0;
-      let portion2 = 0;
-      let portion3 = 0;
-
-      if (aime <= BEND_POINT_1) {
-        portion1 = aime * 0.90;
-      } else if (aime <= BEND_POINT_2) {
-        portion1 = BEND_POINT_1 * 0.90;
-        portion2 = (aime - BEND_POINT_1) * 0.32;
-      } else {
-        portion1 = BEND_POINT_1 * 0.90;
-        portion2 = (BEND_POINT_2 - BEND_POINT_1) * 0.32;
-        portion3 = (aime - BEND_POINT_2) * 0.15;
-      }
-
-      return {
-        portion1: portion1,
-        portion2: portion2,
-        portion3: portion3,
-        totalPIA: portion1 + portion2 + portion3
+      const piaMonthly = parseInt(document.getElementById('stat-pia').innerText.replace(/[\$,\s/tháng]/g, '')) || 0;
+      
+      const ageFactors = {
+        62: 0.70, 63: 0.75, 64: 0.80, 65: 0.867, 66: 0.933,
+        67: 1.00, 68: 1.08, 69: 1.16, 70: 1.24
       };
-    }
 
-    // Update Pension Metrics
-    function updatePensionMetricsFromEarnings() {
-      // Sum the top 35 years
-      const top35 = earningsHistory.filter(e => e.isTop35);
-      const totalTop35Income = top35.reduce((sum, item) => sum + item.cappedVal, 0);
+      const factor = ageFactors[age] || 1.0;
+      const benefit = Math.round(piaMonthly * factor);
 
-      // AIME = Total of 35 highest years divided by 420 months (regardless of whether you worked 35 years or less)
-      const aime = Math.round(totalTop35Income / 420);
-      const piaData = calculatePIA(aime);
-      const pia = Math.round(piaData.totalPIA);
+      document.getElementById('selected-benefit-percent').innerText = `${Math.round(factor * 100)}%`;
+      document.getElementById('selected-benefit-val').innerText = `$${benefit.toLocaleString()} / tháng ($${(benefit * 12).toLocaleString()} / năm)`;
 
-      // Top Quick Stats
-      document.getElementById('statRecordedYears').innerText = earningsHistory.length;
-      document.getElementById('statQuickAime').innerText = `$${aime.toLocaleString()}`;
-      document.getElementById('statQuickPia').innerText = `$${pia.toLocaleString()}/th`;
-
-      // Tab 1 Summary
-      document.getElementById('summaryYearsCount').innerText = `${earningsHistory.length} năm (Đủ ${top35.length}/35 năm)`;
-      document.getElementById('summaryTotal35').innerText = `$${Math.round(totalTop35Income).toLocaleString()}`;
-      document.getElementById('summaryAimeVal').innerText = `$${aime.toLocaleString()} / tháng`;
-
-      document.getElementById('bend1Amount').innerText = `$${piaData.portion1.toFixed(2)}`;
-      document.getElementById('bend2Amount').innerText = `$${piaData.portion2.toFixed(2)}`;
-      document.getElementById('bend3Amount').innerText = `$${piaData.portion3.toFixed(2)}`;
-      document.getElementById('piaResultVal').innerText = `$${pia.toLocaleString()} / tháng`;
-      document.getElementById('statAime').innerText = `$${aime.toLocaleString()}`;
-
-      // Update claiming age calculation
-      updateClaimingAgeResult(pia);
-    }
-
-    function onClaimAgeChange(age) {
-      selectedClaimAge = parseInt(age);
-      const aimeStr = document.getElementById('summaryAimeVal').innerText.replace(/[^0-9]/g, '');
-      const aime = parseInt(aimeStr) || 6250;
-      const piaData = calculatePIA(aime);
-      updateClaimingAgeResult(Math.round(piaData.totalPIA));
-    }
-
-    function updateClaimingAgeResult(pia) {
-      const factor = AGE_FACTORS[selectedClaimAge] || 1.0;
-      const monthlyBenefit = Math.round(pia * factor);
-      const annualBenefit = monthlyBenefit * 12;
-
-      document.getElementById('displayClaimAge').innerText = `${selectedClaimAge} tuổi (${(factor * 100).toFixed(1)}% FRA)`;
-      document.getElementById('statMonthlyPayout').innerText = `$${monthlyBenefit.toLocaleString()}`;
-      document.getElementById('statAnnualPayout').innerText = `$${annualBenefit.toLocaleString()}`;
-
-      const noteEl = document.getElementById('statPayoutNote');
-      const stratEl = document.getElementById('strategyText');
-      if (selectedClaimAge === 67) {
-        noteEl.innerText = "Đúng mốc chuẩn FRA (100% PIA)";
-        stratEl.innerText = "Tuổi 67 mang lại 100% mức bảo hiểm cơ bản. Bạn được tự do đi làm thêm mà không bị giảm tiền hưu do trần giới hạn thu nhập.";
-      } else if (selectedClaimAge < 67) {
-        const pctDown = Math.round((1 - factor) * 100);
-        noteEl.innerText = `Bị giảm ${pctDown}% vĩnh viễn`;
-        stratEl.innerText = `Lấy sớm ở tuổi ${selectedClaimAge} giúp bạn có tiền tiêu ngay, nhưng mức lương sẽ bị giảm vĩnh viễn ${pctDown}%. Nếu vẫn còn đi làm, bạn có thể bị tạm giữ một phần tiền nếu vượt trần Earnings Test.`;
-      } else {
-        const pctUp = Math.round((factor - 1) * 100);
-        noteEl.innerText = `Tăng thưởng +${pctUp}% vĩnh viễn`;
-        stratEl.innerText = `Hoãn nhận đến ${selectedClaimAge} tuổi được chính phủ thưởng thêm 8%/năm! Đây là khoản đầu tư phi rủi ro có lãi suất thực cao nhất cho người cao tuổi tại Mỹ.`;
+      if (ageChartInstance) {
+        const ages = [62, 63, 64, 65, 66, 67, 68, 69, 70];
+        ageChartInstance.data.datasets[0].backgroundColor = ages.map(a => a === age ? '#4f46e5' : '#cbd5e1');
+        ageChartInstance.update();
       }
-
-      renderPensionAgeChart(pia, selectedClaimAge);
     }
 
-    function renderPensionAgeChart(pia = 2680, activeAge = 67) {
-      const ctx = document.getElementById('pensionAgeChart');
-      if (!ctx) return;
+    function syncBenefitToTaxTab() {
+      const age = parseInt(document.getElementById('claimAgeSlider').value);
+      const piaMonthly = parseInt(document.getElementById('stat-pia').innerText.replace(/[\$,\s/tháng]/g, '')) || 0;
+      const ageFactors = { 62:0.7, 63:0.75, 64:0.8, 65:0.867, 66:0.933, 67:1.0, 68:1.08, 69:1.16, 70:1.24 };
+      const annualSS = Math.round(piaMonthly * (ageFactors[age] || 1.0) * 12);
 
-      const ages = [62, 63, 64, 65, 66, 67, 68, 69, 70];
-      const monthlyValues = ages.map(age => Math.round(pia * AGE_FACTORS[age]));
-      const backgroundColors = ages.map(age => (age === activeAge ? '#2563eb' : (age === 67 ? '#94a3b8' : '#cbd5e1')));
-
-      if (pensionChartInstance) {
-        pensionChartInstance.data.datasets[0].data = monthlyValues;
-        pensionChartInstance.data.datasets[0].backgroundColor = backgroundColors;
-        pensionChartInstance.update();
-        return;
-      }
-
-      pensionChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ages.map(a => `${a} tuổi`),
-          datasets: [{
-            data: monthlyValues,
-            backgroundColor: backgroundColors,
-            borderRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => ` $${ctx.raw.toLocaleString()}/tháng (${(AGE_FACTORS[ages[ctx.dataIndex]]*100).toFixed(1)}% PIA)`
-              }
-            }
-          },
-          scales: {
-            y: {
-              ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 10 } },
-              grid: { color: '#f1f5f9' }
-            },
-            x: { grid: { display: false } }
-          }
-        }
-      });
+      document.getElementById('tax-annual-ss').value = annualSS;
+      calculateTax();
+      switchTab('tax');
     }
 
-    // Sync from Tab 1 to Tab 2
-    function syncPensionToTax() {
-      const annualStr = document.getElementById('statAnnualPayout').innerText.replace(/[^0-9]/g, '');
-      const annual = parseInt(annualStr) || 32160;
-      document.getElementById('taxSSBenefit').value = annual;
-      switchTab('tab-tax');
-      showToast('Đã đồng bộ số tiền lương hưu sang Tab Thuế');
-    }
+    function calculateTax() {
+      const filing = document.getElementById('filingStatus').value;
+      const annualSS = parseFloat(document.getElementById('tax-annual-ss').value) || 0;
+      let otherIncome = parseFloat(document.getElementById('tax-other-income').value) || 0;
+      const exemptInterest = parseFloat(document.getElementById('tax-exempt-interest').value) || 0;
+      const isRoth = document.getElementById('rothToggle').checked;
 
-    // ==================== TAB 2: TAX & ROTH LOGIC ====================
-    function toggleRothSimulation() {
-      isRothActive = document.getElementById('rothToggle').checked;
-      updateTaxCalculation();
-    }
+      if (isRoth) otherIncome = 0;
 
-    function updateTaxCalculation() {
-      const status = document.getElementById('filingStatus').value;
-      const totalSS = parseFloat(document.getElementById('taxSSBenefit').value) || 0;
-      let rawOtherIncome = parseFloat(document.getElementById('otherIncome').value) || 0;
-      const taxExempt = parseFloat(document.getElementById('taxExemptInterest').value) || 0;
-
-      document.getElementById('displayTaxSSVal').innerText = `$${totalSS.toLocaleString()} / năm`;
-      document.getElementById('displayOtherIncome').innerText = `$${rawOtherIncome.toLocaleString()} / năm`;
-      const halfSS = totalSS * 0.5;
-      document.getElementById('halfSSDisplay').innerText = `$${Math.round(halfSS).toLocaleString()}`;
-
-      // Roth IRA: Excluded from AGI and Combined Income
-      let effectiveOtherIncome = isRothActive ? 0 : rawOtherIncome;
-      const combinedIncome = effectiveOtherIncome + taxExempt + halfSS;
-      document.getElementById('statCombinedIncome').innerText = `$${Math.round(combinedIncome).toLocaleString()}`;
-
-      let t1 = 25000;
-      let t2 = 34000;
-      const t0Label = document.getElementById('tier0Label');
-      const t1Label = document.getElementById('tier1Label');
-      const t2Label = document.getElementById('tier2Label');
-      const marker1 = document.getElementById('marker1');
-      const marker2 = document.getElementById('marker2');
-
-      if (status === 'single') {
-        t1 = 25000; t2 = 34000;
-        t0Label.innerText = "Dưới $25,000";
-        t1Label.innerText = "$25,000 – $34,000";
-        t2Label.innerText = "Trên $34,000";
-        marker1.innerText = "$25k";
-        marker2.innerText = "$34k";
-      } else if (status === 'married_joint') {
-        t1 = 32000; t2 = 44000;
-        t0Label.innerText = "Dưới $32,000";
-        t1Label.innerText = "$32,000 – $44,000";
-        t2Label.innerText = "Trên $44,000";
-        marker1.innerText = "$32k";
-        marker2.innerText = "$44k";
-      } else {
-        t1 = 0; t2 = 0;
-        t0Label.innerText = "Không áp dụng ($0)";
-        t1Label.innerText = "Không áp dụng";
-        t2Label.innerText = "Từ $0 trở lên";
-        marker1.innerText = "$0";
-        marker2.innerText = "$0";
-      }
-
+      const combinedIncome = otherIncome + exemptInterest + (0.5 * annualSS);
       let taxableSS = 0;
-      let badge = document.getElementById('taxStatusBadge');
-      let progBarText = document.getElementById('statBarPercent');
+      let bracketName = "0% (Miễn thuế)";
 
-      if (status === 'married_separate') {
-        taxableSS = Math.min(0.85 * totalSS, 0.85 * combinedIncome);
-        badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300";
-        badge.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Chịu thuế bậc cao nhất (85%)`;
-        progBarText.innerText = "Khai riêng phải chịu thuế ngay";
-      } else {
-        if (combinedIncome <= t1) {
-          taxableSS = 0;
-          badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300";
-          badge.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Miễn thuế 100% (An toàn)`;
-          progBarText.innerText = "Nằm dưới ngưỡng chịu thuế";
-        } else if (combinedIncome <= t2) {
-          const excess = combinedIncome - t1;
-          taxableSS = Math.min(0.50 * totalSS, 0.50 * excess);
-          badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300";
-          badge.innerHTML = `<i data-lucide="info" class="w-3.5 h-3.5"></i> Chịu thuế bậc 1 (Tối đa 50%)`;
-          progBarText.innerText = `Nằm trong khung $${(t1/1000)}k – $${(t2/1000)}k`;
+      if (filing === 'single') {
+        if (combinedIncome > 34000) {
+          taxableSS = Math.min(0.85 * annualSS, (0.5 * 9000) + (0.85 * (combinedIncome - 34000)));
+          bracketName = "Khung tối đa 85%";
+        } else if (combinedIncome > 25000) {
+          taxableSS = Math.min(0.50 * annualSS, 0.50 * (combinedIncome - 25000));
+          bracketName = "Khung tối đa 50%";
         } else {
-          const maxTier1Amt = 0.50 * (t2 - t1);
-          const basePortion = Math.min(maxTier1Amt, 0.50 * totalSS);
-          const excessOverT2 = combinedIncome - t2;
-          const tier2Portion = 0.85 * excessOverT2;
-          taxableSS = Math.min(0.85 * totalSS, basePortion + tier2Portion);
-          badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300";
-          badge.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Chịu thuế bậc 2 (Lên đến 85%)`;
-          progBarText.innerText = `Vượt ngưỡng $${(t2/1000)}k`;
+          taxableSS = 0;
         }
+      } else if (filing === 'married_joint') {
+        if (combinedIncome > 44000) {
+          taxableSS = Math.min(0.85 * annualSS, (0.5 * 12000) + (0.85 * (combinedIncome - 44000)));
+          bracketName = "Khung tối đa 85%";
+        } else if (combinedIncome > 32000) {
+          taxableSS = Math.min(0.50 * annualSS, 0.50 * (combinedIncome - 32000));
+          bracketName = "Khung tối đa 50%";
+        } else {
+          taxableSS = 0;
+        }
+      } else {
+        taxableSS = Math.min(0.85 * annualSS, 0.85 * combinedIncome);
+        bracketName = "Khung 85% (Khai riêng)";
       }
 
       taxableSS = Math.max(0, Math.round(taxableSS));
-      const taxFreeSS = Math.max(0, Math.round(totalSS - taxableSS));
-      const taxablePct = totalSS > 0 ? ((taxableSS / totalSS) * 100).toFixed(1) : 0;
-      const taxFreePct = totalSS > 0 ? ((taxFreeSS / totalSS) * 100).toFixed(1) : 100;
-      const estimatedTax = Math.round(taxableSS * 0.12);
+      const nonTaxableSS = Math.max(0, Math.round(annualSS - taxableSS));
+      const percentTaxable = annualSS > 0 ? Math.round((taxableSS / annualSS) * 100) : 0;
 
-      document.getElementById('statTaxFreeAmt').innerText = `$${taxFreeSS.toLocaleString()}`;
-      document.getElementById('statTaxFreePercent').innerText = `(${taxFreePct}% tiền hưu)`;
-      document.getElementById('statTaxableAmt').innerText = `$${taxableSS.toLocaleString()}`;
-      document.getElementById('statTaxablePercent').innerText = `(${taxablePct}% tiền hưu)`;
-      document.getElementById('statEstFedTax').innerText = `~$${estimatedTax.toLocaleString()}`;
-      document.getElementById('statQuickTax').innerText = taxableSS === 0 ? "0% (Miễn thuế)" : `~$${estimatedTax.toLocaleString()}/năm`;
+      document.getElementById('stat-combined-income').innerText = '$' + Math.round(combinedIncome).toLocaleString();
+      document.getElementById('stat-combined-bracket').innerText = bracketName;
+      document.getElementById('stat-taxable-ss').innerText = '$' + taxableSS.toLocaleString();
+      document.getElementById('stat-taxable-percent').innerText = `(${percentTaxable}% tổng tiền hưu)`;
+      document.getElementById('stat-nontaxable-ss').innerText = '$' + nonTaxableSS.toLocaleString();
 
-      // Progress bar
-      const pFree = document.getElementById('progFree');
-      const p50 = document.getElementById('prog50');
-      const p85 = document.getElementById('prog85');
-      if (t1 === 0 && t2 === 0) {
-        pFree.style.width = '0%'; p50.style.width = '0%'; p85.style.width = '100%';
-      } else {
-        const maxScale = t2 * 1.5;
-        let freeW = Math.min((t1 / maxScale) * 100, 100);
-        let band50W = Math.min(((t2 - t1) / maxScale) * 100, 100 - freeW);
-        let band85W = 100 - freeW - band50W;
-        pFree.style.width = freeW + '%'; p50.style.width = band50W + '%'; p85.style.width = band85W + '%';
-      }
-
-      renderTaxDonutChart(taxFreeSS, taxableSS);
-      renderIncomeCompChart(effectiveOtherIncome, taxExempt, halfSS);
-      lucide.createIcons();
+      updateTaxDonut(taxableSS, nonTaxableSS);
     }
 
-    function renderTaxDonutChart(taxFree, taxable) {
-      const ctx = document.getElementById('taxDonutChart');
-      if (!ctx) return;
+    function initCharts() {
+      // 1. Chart Lịch sử thu nhập
+      const ctxHistory = document.getElementById('earningsHistoryChart').getContext('2d');
+      earningsChartInstance = new Chart(ctxHistory, {
+        type: 'bar',
+        data: { labels: [], datasets: [] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { callback: v => '$' + (v / 1000) + 'k' }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: $${ctx.raw.toLocaleString()}`
+              }
+            }
+          }
+        }
+      });
 
-      if (taxDonutChartInstance) {
-        taxDonutChartInstance.data.datasets[0].data = [taxFree, taxable];
-        taxDonutChartInstance.update();
-        return;
-      }
-
-      taxDonutChartInstance = new Chart(ctx, {
-        type: 'doughnut',
+      // 2. Chart so sánh tuổi
+      const ctxAge = document.getElementById('ageComparisonChart').getContext('2d');
+      ageChartInstance = new Chart(ctxAge, {
+        type: 'bar',
         data: {
-          labels: ['Miễn Thuế', 'Chịu Thuế'],
+          labels: ['62 tuổi', '63 tuổi', '64 tuổi', '65 tuổi', '66 tuổi', '67 tuổi (Chuẩn)', '68 tuổi', '69 tuổi', '70 tuổi'],
           datasets: [{
-            data: [taxFree, taxable],
-            backgroundColor: ['#10b981', '#f43f5e'],
-            hoverOffset: 4,
-            borderWidth: 2,
-            borderColor: '#ffffff'
+            label: 'Tiền hưu nhận mỗi tháng ($)',
+            data: [],
+            backgroundColor: '#cbd5e1',
+            borderRadius: 6
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          cutout: '68%'
+          scales: {
+            y: { ticks: { callback: v => '$' + v } }
+          }
         }
       });
-    }
 
-    function renderIncomeCompChart(otherInc, taxExempt, halfSS) {
-      const ctx = document.getElementById('incomeCompositionChart');
-      if (!ctx) return;
-
-      if (incomeCompChartInstance) {
-        incomeCompChartInstance.data.datasets[0].data = [otherInc];
-        incomeCompChartInstance.data.datasets[1].data = [taxExempt];
-        incomeCompChartInstance.data.datasets[2].data = [halfSS];
-        incomeCompChartInstance.update();
-        return;
-      }
-
-      incomeCompChartInstance = new Chart(ctx, {
-        type: 'bar',
+      // 3. Donut Chart Thuế
+      const ctxTax = document.getElementById('taxDonutChart').getContext('2d');
+      taxDonutChartInstance = new Chart(ctxTax, {
+        type: 'doughnut',
         data: {
-          labels: ['Combined Income'],
-          datasets: [
-            {
-              label: 'Thu nhập khác (401k/IRA/Lương)',
-              data: [otherInc],
-              backgroundColor: '#6366f1',
-              borderRadius: { topLeft: 6, bottomLeft: 6 }
-            },
-            {
-              label: 'Lãi miễn thuế',
-              data: [taxExempt],
-              backgroundColor: '#f59e0b'
-            },
-            {
-              label: '50% Social Security',
-              data: [halfSS],
-              backgroundColor: '#3b82f6',
-              borderRadius: { topRight: 6, bottomRight: 6 }
-            }
-          ]
+          labels: ['Phần bị tính thuế', 'Phần miễn thuế hoàn toàn'],
+          datasets: [{
+            data: [0, 100],
+            backgroundColor: ['#f43f5e', '#10b981'],
+            borderWidth: 2
+          }]
         },
         options: {
-          indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
-          scales: {
-            x: { stacked: true, ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 10 } }, grid: { color: '#f1f5f9' } },
-            y: { stacked: true, display: false }
-          },
           plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+            legend: { position: 'bottom' }
           }
         }
       });
     }
 
-    // ==================== PARSER & SAMPLE DATA ====================
-    function parseRawInput() {
-      const text = document.getElementById('rawInputArea').value;
-      if (!text.trim()) {
-        showToast('Vui lòng dán dữ liệu vào ô nhập');
-        return;
-      }
+    function updateEarningsChart(top35Years) {
+      if (!earningsChartInstance) return;
+      const sorted = [...earningsData].sort((a,b) => a.year - b.year);
+      const labels = sorted.map(d => d.year);
+      const dataValues = sorted.map(d => d.taxableSS);
+      const bgColors = sorted.map(d => top35Years.has(d.year) ? '#10b981' : '#cbd5e1');
+      const capLines = sorted.map(d => WAGE_CAPS[d.year] || 175900);
 
-      const parsedItems = [];
-      const lines = text.split('\n');
-
-      for (let line of lines) {
-        line = line.trim();
-        if (!line || line.startsWith('#') || line.toLowerCase().includes('year')) continue;
-
-        // Try comma, tab, or whitespace delimiter
-        const parts = line.split(/[,\t]+|\s{2,}/);
-        if (parts.length >= 2) {
-          const year = parseInt(parts[0].replace(/[^0-9]/g, ''));
-          const val = parseFloat(parts[1].replace(/[^0-9.]/g, ''));
-          if (year && year >= 1950 && year <= 2050 && !isNaN(val)) {
-            parsedItems.push({ year, rawVal: val });
-          }
-        } else {
-          // Fallback single space match
-          const spaceParts = line.split(/\s+/);
-          if (spaceParts.length >= 2) {
-            const year = parseInt(spaceParts[0]);
-            const val = parseFloat(spaceParts[1].replace(/[^0-9.]/g, ''));
-            if (year && year >= 1950 && year <= 2050 && !isNaN(val)) {
-              parsedItems.push({ year, rawVal: val });
-            }
-          }
+      earningsChartInstance.data.labels = labels;
+      earningsChartInstance.data.datasets = [
+        {
+          type: 'line',
+          label: 'Trần Wage Cap',
+          data: capLines,
+          borderColor: '#ef4444',
+          borderWidth: 1.5,
+          borderDash: [4, 4],
+          fill: false,
+          pointRadius: 0
+        },
+        {
+          type: 'bar',
+          label: 'Thu nhập tính lương hưu',
+          data: dataValues,
+          backgroundColor: bgColors,
+          borderRadius: 4
         }
-      }
-
-      if (parsedItems.length > 0) {
-        earningsHistory = parsedItems;
-        recalcEarningsData();
-        showToast(`Đã nhận diện thành công ${parsedItems.length} năm dữ liệu!`);
-      } else {
-        showToast('Không nhận diện được định dạng. Vui lòng kiểm tra lại!');
-      }
+      ];
+      earningsChartInstance.update();
     }
 
-    function handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const content = e.target.result;
-        // Check if JSON
-        if (file.name.endsWith('.json')) {
-          try {
-            const json = JSON.parse(content);
-            if (Array.isArray(json)) {
-              earningsHistory = json.map(item => ({
-                year: parseInt(item.year || item.Year),
-                rawVal: parseFloat(item.earnings || item.income || item.amount || 0)
-              }));
-              recalcEarningsData();
-              showToast(`Đã nhập ${earningsHistory.length} năm từ file JSON!`);
-              return;
-            }
-          } catch (err) {}
-        }
-
-        // Otherwise parse as plain text/CSV
-        document.getElementById('rawInputArea').value = content;
-        parseRawInput();
-      };
-      reader.readAsText(file);
+    function updateAgeChart(pia) {
+      if (!ageChartInstance) return;
+      const factors = [0.70, 0.75, 0.80, 0.867, 0.933, 1.00, 1.08, 1.16, 1.24];
+      const monthlyValues = factors.map(f => Math.round(pia * f));
+      ageChartInstance.data.datasets[0].data = monthlyValues;
+      ageChartInstance.update();
     }
 
-    function loadSampleSSAText() {
-      const sampleText = `Year,Social Security Taxed Earnings\n` +
-        `2024, 98500\n2023, 94200\n2022, 89000\n2021, 85000\n2020, 81000\n` +
-        `2019, 77500\n2018, 74000\n2017, 70500\n2016, 67000\n2015, 64000\n` +
-        `2014, 61500\n2013, 59000\n2012, 56500\n2011, 54000\n2010, 52000\n` +
-        `2009, 50000\n2008, 48000\n2007, 46000\n2006, 44000\n2005, 42000\n` +
-        `2004, 40000\n2003, 38500\n2002, 37000\n2001, 35500\n2000, 34000\n` +
-        `1999, 32500\n1998, 31000\n1997, 29500\n1996, 28000\n1995, 26500\n` +
-        `1994, 25000\n1993, 23500\n1992, 22000\n1991, 20500\n1990, 19000`;
-      document.getElementById('rawInputArea').value = sampleText;
-      parseRawInput();
+    function updateTaxDonut(taxable, nonTaxable) {
+      if (!taxDonutChartInstance) return;
+      taxDonutChartInstance.data.datasets[0].data = [taxable, nonTaxable];
+      taxDonutChartInstance.update();
     }
 
-    function fillSampleData(type) {
-      earningsHistory = [];
-      const currentYear = 2024;
-      for (let i = 0; i < 35; i++) {
-        const yr = currentYear - i;
-        let val = 0;
-        if (type === 'typical') {
-          // Typical career growing from $30k to $100k
-          val = Math.round(30000 + (34 - i) * 2200);
-        } else {
-          // High earner capping out FICA
-          val = WAGE_CAPS[yr] || DEFAULT_CAP;
-        }
-        earningsHistory.push({ year: yr, rawVal: val });
-      }
-      recalcEarningsData();
-      showToast(`Đã tạo bộ dữ liệu 35 năm (${type === 'typical' ? 'Điển hình' : 'Kịch trần Max Cap'})!`);
+    function saveData() {
+      localStorage.setItem('ss_calc_earnings_v2', JSON.stringify(earningsData));
     }
 
-    // Initialize application
-    window.onload = function() {
-      // Check saved cache
-      const cached = localStorage.getItem('ss_calc_earnings');
-      if (cached) {
+    function loadSavedData() {
+      const saved = localStorage.getItem('ss_calc_earnings_v2');
+      if (saved) {
         try {
-          earningsHistory = JSON.parse(cached);
+          earningsData = JSON.parse(saved);
         } catch (e) {
-          earningsHistory = [];
+          earningsData = [];
         }
       }
-
-      if (!earningsHistory || earningsHistory.length === 0) {
-        fillSampleData('typical');
-      } else {
-        recalcEarningsData();
-      }
-
-      lucide.createIcons();
-    };
+    }
   </script>
 </body>
 </html>
