@@ -289,7 +289,7 @@
               </div>
             </div>
             <p class="text-xs text-slate-500 mb-3">
-              Nếu bạn đủ tài chính để trì hoãn đến 70 tuổi, mỗi tháng số tiền hưu của bạn sẽ tăng thêm đáng kể so với việc nhận sớm từ tuổi 62.
+              Kéo thanh trượt để xem biểu đồ tự động đổi màu và cập nhật số tiền nhận tương ứng theo từng mốc tuổi.
             </p>
             <div class="relative h-[380px] w-full">
               <canvas id="ageComparisonChart"></canvas>
@@ -433,16 +433,16 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       loadSavedData();
+      initCharts();
       if (earningsData.length === 0) {
         generateSampleEarnings(35, 65000);
       } else {
         calculateAll();
       }
-      initCharts();
       calculateTax();
     });
 
-    // Chuyển Tab
+    // Chuyển Tab có xử lý resize chart
     function switchTab(tab) {
       document.getElementById('tab-earnings').classList.add('hidden');
       document.getElementById('tab-benefits').classList.add('hidden');
@@ -456,9 +456,20 @@
       document.getElementById(`tab-${tab}`).classList.remove('hidden');
       document.getElementById(`tab-btn-${tab}`).className = 'py-2.5 px-4 border-b-2 font-bold text-xs sm:text-sm border-indigo-600 text-indigo-600 flex items-center gap-2 whitespace-nowrap transition-colors';
 
-      if (tab === 'earnings' && earningsChartInstance) earningsChartInstance.resize();
-      if (tab === 'benefits' && ageChartInstance) ageChartInstance.resize();
-      if (tab === 'tax' && taxDonutChartInstance) taxDonutChartInstance.resize();
+      setTimeout(() => {
+        if (tab === 'earnings' && earningsChartInstance) {
+          earningsChartInstance.resize();
+          earningsChartInstance.update();
+        }
+        if (tab === 'benefits' && ageChartInstance) {
+          ageChartInstance.resize();
+          ageChartInstance.update();
+        }
+        if (tab === 'tax' && taxDonutChartInstance) {
+          taxDonutChartInstance.resize();
+          taxDonutChartInstance.update();
+        }
+      }, 50);
     }
 
     // Chuyển chế độ Gross / Net
@@ -594,7 +605,7 @@
       // AIME = tổng 35 năm / 420 tháng
       const aime = Math.round(total35 / 420);
 
-      // Công thức mốc chuẩn SSA
+      // Công thức mốc chuẩn SSA (Bend points)
       let pia = 0;
       if (aime <= 1226) {
         pia = aime * 0.90;
@@ -646,6 +657,7 @@
       });
     }
 
+    // Kéo tới đâu cập nhật thời gian thực tới đó
     function updateClaimAge(age) {
       age = parseInt(age);
       document.getElementById('selected-age-display').innerText = `${age} tuổi`;
@@ -664,10 +676,17 @@
       document.getElementById('selected-benefit-percent').innerText = `${Math.round(factor * 100)}%`;
       document.getElementById('selected-benefit-val').innerText = `$${benefit.toLocaleString()} / tháng ($${(benefit * 12).toLocaleString()} / năm)`;
 
+      // Cập nhật màu sắc cột biểu đồ tức thì
       if (ageChartInstance) {
         const ages = [62, 63, 64, 65, 66, 67, 68, 69, 70];
-        ageChartInstance.data.datasets[0].backgroundColor = ages.map(a => a === age ? '#4f46e5' : '#cbd5e1');
-        ageChartInstance.update();
+        const newColors = ages.map(a => a === age ? '#4f46e5' : '#cbd5e1');
+        const newBorderColors = ages.map(a => a === age ? '#312e81' : '#94a3b8');
+        const newBorderWidth = ages.map(a => a === age ? 2 : 0);
+
+        ageChartInstance.data.datasets[0].backgroundColor = newColors;
+        ageChartInstance.data.datasets[0].borderColor = newBorderColors;
+        ageChartInstance.data.datasets[0].borderWidth = newBorderWidth;
+        ageChartInstance.update('none'); // Update ngay không animation giật lag khi kéo
       }
     }
 
@@ -758,7 +777,7 @@
         }
       });
 
-      // 2. Chart so sánh tuổi
+      // 2. Chart so sánh tuổi (62 - 70)
       const ctxAge = document.getElementById('ageComparisonChart').getContext('2d');
       ageChartInstance = new Chart(ctxAge, {
         type: 'bar',
